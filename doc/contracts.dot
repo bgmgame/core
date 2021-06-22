@@ -1,0 +1,34 @@
+digraph tokenflow{
+
+    node [shape=box]{
+        player[label="游戏玩家(USDT/BUSD/DAI/UT)" ,fontname="Microsoft YaHei" ,width=1,fontsize=16,margin=0.2];
+        LPS[label="庄家（USDT/BUSD/DAI奖池提供者）",fontname="Microsoft YaHei" ,width=1,fontsize=16,margin=0.2];
+        UTUSER[label="LP拥有者"];
+        
+
+    }
+    node [shape=oval];
+    BRMRouter[label="BRMRouter",fontname="Microsoft YaHei" ,width=5,fontsize=20,margin=0.2];
+    player -> BRMRouter -> IGame [label="wager/withdraw",dir="both"];
+    LPS ->  BRMRouter -> LPToken [label="addBonusPool/removeBonusPool"]
+
+    BRMRouter->BGMPool[label="addBonusPool"];
+    BRMRouter->BGMBackup[label="fillGamePool/奖池控制"]
+
+    UTUSER -> BGMPool [label="deposit/withdraw"];
+    BGMPool -> BGM -> UTUSER[label="BGM奖励"];
+    // gameroute->wagerMining ->BGM;
+    BGMPool -> BGMReferences -> UTUSER [label="推荐奖励"];
+    BGMPool->NoneFeeLender [label="LP贷款"]
+    
+    
+    IGame->BGMProfitShare[label="利润分配"];
+    BGMProfitShare->BGMPool[label="40%分红"];
+    BGMProfitShare->BGMBackup[label="10%备份"];
+    BGMProfitShare->Repurchase[label="40%回购"];
+    BGMProfitShare -> dev[label="10%团队"];
+    BGMBackup->LPToken[label="bgmProfit/股权增益"];
+    BRMRouter->UTToken[label="swap"];
+
+
+}
