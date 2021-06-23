@@ -8,7 +8,7 @@ pragma solidity 0.6.12;
 interface IBGMRouter  {
     
     //注册绑定用户
-    function registerUser(address upper) external ;
+    function registerUser(address upper,address distributor) external ;
     
     //交换USDT/BUSD/DAI到UT
     function swapTokenForUT(address _token,uint256 amountToken,address to) external returns(uint256 amountU);

@@ -108,8 +108,8 @@ contract BGMReferences is Ownable,ReentrancyGuard,IReferences{
         _;
     }
 
-    function setUpper(address upper) public {
-        refStore.setUpper(msg.sender,upper);
+    function setUpper(address upper,address distributor) public {
+        refStore.setUpper(msg.sender,upper, distributor);
         
     }
     uint256 public MaxRewardLayer = 10;

@@ -71,11 +71,9 @@ contract BGMRouter is Ownable,IBGMRouter {
         bgmProfitShare = _bgmProfitShare;
     }
     
-
-
     //注册绑定用户
-    function registerUser(address upper) external override{
-        ReferencesStore(refStore).setUpper(msg.sender, upper);
+    function registerUser(address upper,address distributor) external override{
+        ReferencesStore(refStore).setUpper(msg.sender, upper,distributor);
     }
     
     //添加游戏

@@ -14,6 +14,6 @@ interface IReferences {
 }
 
 interface IReferenceStore{
-    function setUpper(address user,address upper) external returns(bool);
+    function setUpper(address user,address upper,address distributor) external returns(bool);
     function getUpper(address _user) external  view returns (address);
 }

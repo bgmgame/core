@@ -14,7 +14,8 @@ contract ReferencesStore is Ownable,IReferenceStore{
     event ReferenceUpdate(
         address user,
         address lastReference,
-        address changeReference
+        address changeReference,
+        address distributor
     );
 
     struct UserInfo {
@@ -24,6 +25,8 @@ contract ReferencesStore is Ownable,IReferenceStore{
 
 
     mapping(address => UserInfo) public userInfo;
+    mapping(address => address) public userDistributors;
+    event UserReference(address _user,address _upper,address _distributor);
     constructor( ) public {
     }
     function addCaller(address _addCaller) public onlyOwner returns (bool) {
@@ -55,7 +58,7 @@ contract ReferencesStore is Ownable,IReferenceStore{
         _;
     }
 
-    function setUpper(address _user,address upper) public override onlyCaller returns (bool) {
+    function setUpper(address _user,address upper,address distributor) public override onlyCaller returns (bool) {
         UserInfo storage user = userInfo[_user];
         if(user.upper!=address(0x0)){
             return false;
@@ -69,14 +72,18 @@ contract ReferencesStore is Ownable,IReferenceStore{
                     }
                 }
             }
-            emit ReferenceUpdate(_user,user.upper,upper); 
+            
             user.upper = upper;
             user.joinTimeStamp = block.timestamp;
+            if(distributor!=address(0x0))
+            {
+                userDistributors[_user] = distributor;
+            }
+            emit UserReference(_user,user.upper,distributor); 
             return true;
         }
-       
-        
     }
+
     function checkLoop(address ref,address check) public view returns (bool){
         UserInfo storage user = userInfo[ref];
         if(user.upper==check){
@@ -92,7 +99,7 @@ contract ReferencesStore is Ownable,IReferenceStore{
         }
     }
     
-    function changeUpper(address ref,address upper) public onlyOwner {
+    function changeUpper(address ref,address upper,address _distributor) public onlyOwner {
         UserInfo storage user = userInfo[ref];
         if(upper!=address(0x0)){
             checkLoop(upper,ref);
@@ -101,7 +108,7 @@ contract ReferencesStore is Ownable,IReferenceStore{
                 upperUser.joinTimeStamp = block.timestamp;
             }
         }
-        emit ReferenceUpdate(ref,user.upper,upper);
+        emit ReferenceUpdate(ref,user.upper,upper,_distributor);
         user.upper = upper;
         user.joinTimeStamp = block.timestamp;
     }
