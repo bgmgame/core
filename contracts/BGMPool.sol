@@ -10,9 +10,6 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import './interface/IMintableToken.sol';
 import  './libraries/TransferHelper.sol';
-import './interface/IReferences.sol';
-import './interface/ILender.sol';
-import './interface/IMasterChef.sol';
 import './interface/IBGMPool.sol';
 
 contract BGMPool is Ownable ,IBGMPool{
@@ -45,7 +42,6 @@ contract BGMPool is Ownable ,IBGMPool{
     // The BGM Token!
     IMintableToken public BGM;
     
-    IReferences public refs;
     uint256 public blockRewards;
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -83,28 +79,17 @@ contract BGMPool is Ownable ,IBGMPool{
 
     constructor(
         address _BGM,
-        address _refs,
         uint256 _blockRewards, //110
         uint256 _startBlock
         
     ) public {
         BGM = IMintableToken(_BGM);
-        refs = IReferences(_refs);
         blockRewards = _blockRewards;
         startBlock = _startBlock;
     }
 
     function setStartBlock(uint256 _startBlock) public onlyOwner {
         startBlock = _startBlock;
-    }
-
-    address public bgmRouter;
-    function setBGMRouter(address _bgmRouter) public onlyOwner{
-        bgmRouter=_bgmRouter;
-    }
-    
-    function setRefs(address _refs) public onlyOwner{
-        refs = IReferences(_refs);
     }
 
     function setBlockRewards(uint256 _blockRewards) public onlyOwner {
@@ -158,8 +143,8 @@ contract BGMPool is Ownable ,IBGMPool{
         uint256 length = getMultLPLength();
         while (length > 0) {
             address dAddress = EnumerableSet.at(_multLP, 0);
-            uint256 pid = LpOfPid[dAddress];
-            IMasterChef(multLpChef).emergencyWithdraw(poolCorrespond[pid]);
+            // uint256 pid = LpOfPid[dAddress];
+            // IMasterChef(multLpChef).emergencyWithdraw(poolCorrespond[pid]);
             EnumerableSet.remove(_multLP, dAddress);
             length--;
         }
@@ -275,19 +260,19 @@ contract BGMPool is Ownable ,IBGMPool{
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accRewardPerShare = pool.accRewardPerShare;
-        uint256 accMultLpPerShare = pool.accMultLpPerShare;
+        // uint256 accMultLpPerShare = pool.accMultLpPerShare;
         if (user.amount > 0) {
-            uint256 TokenPending = IMasterChef(multLpChef).pending(poolCorrespond[_pid], address(this));
-            accMultLpPerShare = accMultLpPerShare.add(TokenPending.mul(1e12).div(pool.totalAmount));
-            uint256 userPending = user.amount.mul(accMultLpPerShare).div(1e12).sub(user.multLpRewardDebt);
+            // uint256 TokenPending = IMasterChef(multLpChef).pending(poolCorrespond[_pid], address(this));
+            // accMultLpPerShare = accMultLpPerShare.add(TokenPending.mul(1e12).div(pool.totalAmount));
+            // uint256 userPending = user.amount.mul(accMultLpPerShare).div(1e12).sub(user.multLpRewardDebt);
             if (block.number > pool.lastRewardBlock) {
                 uint256 blockReward = getBlockRewards(pool.lastRewardBlock);
                 uint256 poolReward = blockReward.mul(pool.allocPoint).div(totalAllocPoint);
                 accRewardPerShare = accRewardPerShare.add(poolReward.mul(1e12).div(pool.totalAmount));
-                return (user.amount.mul(accRewardPerShare).div(1e12).sub(user.rewardDebt), userPending);
+                return (user.amount.mul(accRewardPerShare).div(1e12).sub(user.rewardDebt), 0);
             }
             if (block.number == pool.lastRewardBlock) {
-                return (user.amount.mul(accRewardPerShare).div(1e12).sub(user.rewardDebt), userPending);
+                return (user.amount.mul(accRewardPerShare).div(1e12).sub(user.rewardDebt), 0);
             }
         }
         return (0, 0);
@@ -333,7 +318,7 @@ contract BGMPool is Ownable ,IBGMPool{
                 safeRewardTransfer(_to, pendingAmount);
             }
             uint256 beforeToken = IERC20(multLpToken).balanceOf(address(this));
-            IMasterChef(multLpChef).deposit(poolCorrespond[_pid], 0);
+            // IMasterChef(multLpChef).deposit(poolCorrespond[_pid], 0);
             uint256 afterToken = IERC20(multLpToken).balanceOf(address(this));
             pool.accMultLpPerShare = pool.accMultLpPerShare.add(afterToken.sub(beforeToken).mul(1e12).div(pool.totalAmount));
             uint256 tokenPending = user.amount.mul(pool.accMultLpPerShare).div(1e12).sub(user.multLpRewardDebt);
@@ -350,12 +335,12 @@ contract BGMPool is Ownable ,IBGMPool{
             }
 
             if (pool.totalAmount == 0) {
-                IMasterChef(multLpChef).deposit(poolCorrespond[_pid], _amount);
+                // IMasterChef(multLpChef).deposit(poolCorrespond[_pid], _amount);
                 user.amount = user.amount.add(_amount);
                 pool.totalAmount = pool.totalAmount.add(_amount);
             } else {
                 uint256 beforeToken = IERC20(multLpToken).balanceOf(address(this));
-                IMasterChef(multLpChef).deposit(poolCorrespond[_pid], _amount);
+                // IMasterChef(multLpChef).deposit(poolCorrespond[_pid], _amount);
                 uint256 afterToken = IERC20(multLpToken).balanceOf(address(this));
                 pool.accMultLpPerShare = pool.accMultLpPerShare.add(afterToken.sub(beforeToken).mul(1e12).div(pool.totalAmount));
                 user.amount = user.amount.add(_amount);
@@ -395,82 +380,6 @@ contract BGMPool is Ownable ,IBGMPool{
         emit Deposit(_user,_to, _pid, _amount);
     }
 
-    function userLock(uint256 _pid,uint256 _lockAmount,address _lender) external notPause override  {
-        _userLock(msg.sender,_pid,_lockAmount,_lender);
-    }
-
-    function userLockFromRouter(address _user ,uint256 _pid,uint256 _lockAmount,address _lender) external notPause override{
-        require(msg.sender==bgmRouter,'only call from router');
-        _userLock(_user,_pid,_lockAmount,_lender);
-    }
-
-    function _userLock(address _user , uint256 _pid,uint256 _lockAmount,address _lender) private {
-        require(_lockAmount>0,'lock amount zero');
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][_user];
-        require(user.amount>0,'user have no lp amount');
-
-        require(user.lockedAmount.add(_lockAmount) <= user.amount,'not enough amount');
-
-        if(pool.investPool==address(0x0))
-        {//token in this contract
-            // pool.lpToken.safeTransferFrom(_user, address(this), _amount);
-            pool.lpToken.safeTransfer(_lender, _lockAmount);
-            emit LockPool(_user,_pid,_lender,_lockAmount,_lockAmount);
-        }else{
-            //token in invest pool
-            // pool.lpToken.safeTransferFrom(_user, pool.investPool, _amount);
-            emit LockPool(_user,_pid,_lender,_lockAmount,0);
-        }
-
-        lockAmounts[_lender][_user][_pid] = lockAmounts[_lender][_user][_pid].add(_lockAmount);
-        user.lockedAmount = user.lockedAmount.add(_lockAmount);
-        
-        ILender(_lender).userLockForLend(_user,address(pool.lpToken), _lockAmount, pool.investPool);
-        
-    }
-
-    function lenderUnlock(address _lpToken,uint256 _unlockAmount,uint256 _feeAmount,address _unlockuser) external override notPause {
-        require(_unlockAmount>0,'unlock amount zero');
-        require(_feeAmount<=_unlockAmount,'fee Amount error');
-
-        address _lender = msg.sender;
-        uint256 _pid = LpOfPid[_lpToken];
-
-        require(lockAmounts[_lender][_unlockuser][_pid]<=_unlockAmount,'unlock amount exceed');
-        
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][_unlockuser];
-
-        require(user.amount>=_unlockAmount,'user lp amount ?');
-        require(user.lockedAmount>=_unlockAmount,'user locked amount ?');
-
-        if(pool.investPool==address(0x0))
-        {//token in this contract
-            // pool.lpToken.safeTransferFrom(_user, address(this), _amount);
-            if(_unlockAmount>_feeAmount){
-                pool.lpToken.safeTransferFrom(_lender, address(this), _unlockAmount.sub(_feeAmount));
-            }
-            emit UnLockPool(_unlockuser,_pid,_lender,_unlockAmount,_unlockAmount.sub(_feeAmount));
-        }else{
-            //token in invest pool
-            emit UnLockPool(_unlockuser,_pid,_lender,_unlockAmount,0);
-        }        
-        user.lockedAmount = user.lockedAmount.sub(_unlockAmount);
-        lockAmounts[_lender][_unlockuser][_pid]=lockAmounts[_lender][_unlockuser][_pid].sub(_unlockAmount);
-        if(_feeAmount>0){
-            updatePool(_pid);
-            uint256 pendingAmount = user.amount.mul(pool.accRewardPerShare).div(1e12).sub(user.rewardDebt);
-            if (pendingAmount > 0) {
-                safeRewardTransfer(_unlockuser, pendingAmount);
-            }
-            user.amount = user.amount.sub(_feeAmount);
-            pool.totalAmount = pool.totalAmount.sub(_feeAmount);
-            user.rewardDebt = user.amount.mul(pool.accRewardPerShare).div(1e12);
-        }
-        
-    }
-
     // Withdraw LP tokens from Pool.
     function withdraw(uint256 _pid, uint256 _amount,address _to) public notPause {
         PoolInfo storage pool = poolInfo[_pid];
@@ -493,7 +402,7 @@ contract BGMPool is Ownable ,IBGMPool{
         }
         if (_amount > 0) {
             uint256 beforeToken = IERC20(multLpToken).balanceOf(address(this));
-            IMasterChef(multLpChef).withdraw(poolCorrespond[_pid], _amount);
+            // IMasterChef(multLpChef).withdraw(poolCorrespond[_pid], _amount);
             uint256 afterToken = IERC20(multLpToken).balanceOf(address(this));
             pool.accMultLpPerShare = pool.accMultLpPerShare.add(afterToken.sub(beforeToken).mul(1e12).div(pool.totalAmount));
             uint256 tokenPending = user.amount.mul(pool.accMultLpPerShare).div(1e12).sub(user.multLpRewardDebt);
@@ -549,7 +458,7 @@ contract BGMPool is Ownable ,IBGMPool{
         UserInfo storage user = userInfo[_pid][_user];
         uint256 amount = user.amount.sub(user.lockedAmount);
         uint256 beforeToken = IERC20(multLpToken).balanceOf(address(this));
-        IMasterChef(multLpChef).withdraw(poolCorrespond[_pid], amount);
+        // IMasterChef(multLpChef).withdraw(poolCorrespond[_pid], amount);
         uint256 afterToken = IERC20(multLpToken).balanceOf(address(this));
         pool.accMultLpPerShare = pool.accMultLpPerShare.add(afterToken.sub(beforeToken).mul(1e12).div(pool.totalAmount));
         user.amount = user.amount.sub(amount);
@@ -578,8 +487,6 @@ contract BGMPool is Ownable ,IBGMPool{
         if (_amount > BGMBal) {
             _amount = BGMBal;
         }
-        //reward to referer.
-        refs.rewardUpper(_to,_amount);
         BGM.transfer(_to, _amount);
     }
 
