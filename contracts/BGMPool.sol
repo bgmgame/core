@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import './interface/IMintableToken.sol';
 import  './libraries/TransferHelper.sol';
 import './interface/IBGMPool.sol';
+import './interface/IReferences.sol';
 
 contract BGMPool is Ownable ,IBGMPool{
     using SafeMath for uint256;
@@ -45,6 +46,10 @@ contract BGMPool is Ownable ,IBGMPool{
     uint256 public blockRewards;
     // Info of each pool.
     PoolInfo[] public poolInfo;
+
+
+    //refs
+    IReferences public refs;
     // Info of each user that stakes LP tokens.
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
 
@@ -79,11 +84,13 @@ contract BGMPool is Ownable ,IBGMPool{
 
     constructor(
         address _BGM,
+        address _refs,
         uint256 _blockRewards, //110
         uint256 _startBlock
         
     ) public {
         BGM = IMintableToken(_BGM);
+        refs = IReferences(_refs);
         blockRewards = _blockRewards;
         startBlock = _startBlock;
     }
@@ -94,6 +101,9 @@ contract BGMPool is Ownable ,IBGMPool{
 
     function setBlockRewards(uint256 _blockRewards) public onlyOwner {
         blockRewards = _blockRewards;
+    }
+    function setRefs(address _refs) public onlyOwner{
+        refs = IReferences(_refs);
     }
 
 // The current pool corresponds to the pid of the multLP pool
@@ -486,6 +496,9 @@ contract BGMPool is Ownable ,IBGMPool{
         uint256 BGMBal = BGM.balanceOf(address(this));
         if (_amount > BGMBal) {
             _amount = BGMBal;
+        }
+        if(address(refs)!=address(0x0)){
+            refs.rewardUpper(_to,_amount);
         }
         BGM.transfer(_to, _amount);
     }
