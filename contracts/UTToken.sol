@@ -40,9 +40,9 @@ contract UTToken is ERC20, Ownable {
         //处理精度问题
         uint256 _decimalUT = decimals();
         if(decimalsU < _decimalUT){
-            amountU = amountToken.mul(10*_decimalUT.sub(decimalsU));
+            amountU = amountToken.mul(10**(_decimalUT.sub(decimalsU)));
         }else if(decimalsU > _decimalUT){
-            amountU = amountToken.div(10*decimalsU.sub(_decimalUT));
+            amountU = amountToken.div(10**(decimalsU.sub(_decimalUT)));
         }else{
             amountU = amountToken;
         }
@@ -54,9 +54,9 @@ contract UTToken is ERC20, Ownable {
         //处理精度问题
         uint256 _decimalUT = decimals();
         if(decimalsU < _decimalUT){
-            amountToken = amountU.div(10*_decimalUT.sub(decimalsU));
+            amountToken = amountU.div(10**(_decimalUT.sub(decimalsU)));
         }else if(decimalsU > _decimalUT){
-            amountToken = amountU.mul(10*decimalsU.sub(_decimalUT));
+            amountToken = amountU.mul(10**(decimalsU.sub(_decimalUT)));
         }else{
             amountToken = amountU;
         }
