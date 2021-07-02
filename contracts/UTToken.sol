@@ -20,6 +20,9 @@ contract UTToken is ERC20, Ownable {
     event Deposit(address indexed user,address indexed to,uint256 amount,uint256 fee);
     event Withdraw(address indexed user,address indexed to,uint256 amount,uint256 fee);
     constructor(string memory name,string memory symbol,uint256 _chargeInFee,uint256 _chargeOutFee,address _feeTo) public ERC20(name, symbol){
+        require(_chargeInFee<1e8,'chargeInFee too large');
+        require(_chargeOutFee<1e8,'chargeOutFee too large');
+
         chargeInFee = _chargeInFee;
         chargeOutFee = _chargeOutFee;
         feeTo = _feeTo;
@@ -30,6 +33,9 @@ contract UTToken is ERC20, Ownable {
         usdTokensDecimal[_token] = decimals;
     }
     function setChargeFee(uint256 _chargeInFee,uint256 _chargeOutFee,address _feeTo) external onlyOwner{
+        require(_chargeInFee<1e8,'chargeInFee too large');
+        require(_chargeOutFee<1e8,'chargeOutFee too large');
+
         chargeInFee = _chargeInFee;
         chargeOutFee = _chargeOutFee;
         feeTo=_feeTo;

@@ -145,20 +145,20 @@ contract BGMPool is Ownable ,IBGMPool{
         multLpChef = _multLpChef;
     }
 
-    function replaceMultLP(address _multLpToken, address _multLpChef) public onlyOwner {
-        require(_multLpToken != address(0) && _multLpChef != address(0), "is the zero address");
-        require(paused == true, "No mining suspension");
-        multLpToken = _multLpToken;
-        multLpChef = _multLpChef;
-        uint256 length = getMultLPLength();
-        while (length > 0) {
-            address dAddress = EnumerableSet.at(_multLP, 0);
-            // uint256 pid = LpOfPid[dAddress];
-            // IMasterChef(multLpChef).emergencyWithdraw(poolCorrespond[pid]);
-            EnumerableSet.remove(_multLP, dAddress);
-            length--;
-        }
-    }
+    // function replaceMultLP(address _multLpToken, address _multLpChef) public onlyOwner {
+    //     require(_multLpToken != address(0) && _multLpChef != address(0), "is the zero address");
+    //     require(paused == true, "No mining suspension");
+    //     multLpToken = _multLpToken;
+    //     multLpChef = _multLpChef;
+    //     uint256 length = getMultLPLength();
+    //     while (length > 0) {
+    //         address dAddress = EnumerableSet.at(_multLP, 0);
+    //         // uint256 pid = LpOfPid[dAddress];
+    //         // IMasterChef(multLpChef).emergencyWithdraw(poolCorrespond[pid]);
+    //         EnumerableSet.remove(_multLP, dAddress);
+    //         length--;
+    //     }
+    // }
     
     function pidFromLPAddr(address _token)external override view returns(uint256 pid){
         return LpOfPid[_token];
@@ -391,7 +391,7 @@ contract BGMPool is Ownable ,IBGMPool{
     }
 
     // Withdraw LP tokens from Pool.
-    function withdraw(uint256 _pid, uint256 _amount,address _to) public notPause {
+    function withdraw(uint256 _pid, uint256 _amount,address _to) public  {
         PoolInfo storage pool = poolInfo[_pid];
         if (isMultLP(address(pool.lpToken))) {
             withdrawRewardsAndTokens(_pid, _amount, msg.sender,_to);
@@ -455,7 +455,7 @@ contract BGMPool is Ownable ,IBGMPool{
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function emergencyWithdraw(uint256 _pid,address _to) public notPause {
+    function emergencyWithdraw(uint256 _pid,address _to) public  {
         PoolInfo storage pool = poolInfo[_pid];
         if (isMultLP(address(pool.lpToken))) {
             emergencyWithdrawRewardsAndToken(_pid, msg.sender,_to);
