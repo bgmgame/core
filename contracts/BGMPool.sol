@@ -21,7 +21,6 @@ contract BGMPool is Ownable ,IBGMPool{
     struct UserInfo {
         uint256 amount;     // How many LP tokens the user has provided.
         uint256 rewardDebt; // Reward debt.
-        uint256 lockedAmount;// user lend Amount
     }
 
     // Info of each pool.
@@ -50,8 +49,6 @@ contract BGMPool is Ownable ,IBGMPool{
     mapping(address=>mapping(address => mapping(uint256 => uint256))) public lockAmounts;
     // pid corresponding address
     mapping(address => uint256) public LpOfPid;
-        // Corresponding to the pid of the multLP pool
-    mapping(uint256 => uint256) public poolCorrespond;
 
     // Control mining
     bool public paused = false;
@@ -249,7 +246,7 @@ contract BGMPool is Ownable ,IBGMPool{
         address _user = msg.sender;
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
-        require(user.amount.sub(user.lockedAmount) >= _amount, "withdraw: not good");
+        require(user.amount >= _amount, "withdraw: not good");
         updatePool(_pid);
 
         uint256 pendingAmount = user.amount.mul(pool.accRewardPerShare).div(1e12).sub(user.rewardDebt);
@@ -258,7 +255,6 @@ contract BGMPool is Ownable ,IBGMPool{
         }
         if (_amount > 0) {
             user.amount = user.amount.sub(_amount);
-            require(user.amount>=user.lockedAmount, "lock amount: not good");
             pool.totalAmount = pool.totalAmount.sub(_amount);
             pool.lpToken.safeTransfer(_to, _amount);
         }
