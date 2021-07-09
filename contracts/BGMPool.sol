@@ -46,7 +46,6 @@ contract BGMPool is Ownable ,IBGMPool{
     // Info of each user that stakes LP tokens.
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
 
-    mapping(address=>mapping(address => mapping(uint256 => uint256))) public lockAmounts;
     // pid corresponding address
     mapping(address => uint256) public LpOfPid;
 
